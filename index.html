@@ -1,1 +1,1155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MuseForge | 音楽制作支援AI</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        display: ['"Montserrat"', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBase: '#07090f',
+                        glassPanel: 'rgba(15, 20, 35, 0.65)',
+                        glassBorder: 'rgba(255, 255, 255, 0.1)',
+                        neonCyan: '#00f3ff',
+                        neonMagenta: '#ff00ea',
+                        neonPurple: '#b026ff',
+                        neonYellow: '#f5df4d',
+                        neonGreen: '#39ff14'
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite alternate',
+                        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'spin-slow': 'spin 3s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        pulseGlow: {
+                            '0%': { boxShadow: '0 0 10px rgba(0, 243, 255, 0.2)' },
+                            '100%': { boxShadow: '0 0 25px rgba(0, 243, 255, 0.6), inset 0 0 15px rgba(0, 243, 255, 0.3)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: 0, transform: 'translateY(30px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #07090f;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(176, 38, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(0, 243, 255, 0.08) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        /* スクロールバー装飾 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #07090f; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .glass-card {
+            background: theme('colors.glassPanel');
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid theme('colors.glassBorder');
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .text-neon-cyan {
+            color: theme('colors.neonCyan');
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5), 0 0 15px rgba(0, 243, 255, 0.3);
+        }
+
+        .text-neon-magenta {
+            color: theme('colors.neonMagenta');
+            text-shadow: 0 0 5px rgba(255, 0, 234, 0.5), 0 0 15px rgba(255, 0, 234, 0.3);
+        }
+
+        .text-neon-purple {
+            color: theme('colors.neonPurple');
+            text-shadow: 0 0 5px rgba(176, 38, 255, 0.5), 0 0 15px rgba(176, 38, 255, 0.3);
+        }
+
+        /* タブのスタイル */
+        .tab-btn {
+            color: #94a3b8;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .tab-btn.active {
+            color: theme('colors.neonCyan');
+            border-bottom: 2px solid theme('colors.neonCyan');
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            background: linear-gradient(to top, rgba(0, 243, 255, 0.1), transparent);
+        }
+
+        /* 雰囲気選択チェックボックスのスタイル */
+        .mood-checkbox:checked + label {
+            background: linear-gradient(135deg, rgba(176, 38, 255, 0.3), rgba(0, 243, 255, 0.3));
+            border-color: theme('colors.neonCyan');
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .mood-label {
+            transition: all 0.3s ease;
+        }
+        
+        .mood-label:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* 入力フォームのスタイル */
+        .cyber-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .cyber-input:focus {
+            outline: none;
+            border-color: theme('colors.neonCyan');
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            background: rgba(0, 243, 255, 0.05);
+        }
+
+        /* レンジスライダーのカスタマイズ */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: theme('colors.neonCyan');
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px theme('colors.neonCyan');
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+        input[type=range]:focus::-webkit-slider-runnable-track {
+            background: rgba(0, 243, 255, 0.3);
+        }
+
+        /* ボタンホバーエフェクト */
+        .btn-generate {
+            background: linear-gradient(90deg, theme('colors.neonPurple'), theme('colors.neonCyan'));
+            background-size: 200% auto;
+            transition: 0.5s;
+        }
+        .btn-generate:hover {
+            background-position: right center;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        .btn-random {
+            background: linear-gradient(90deg, #ff00ea, #b026ff);
+            background-size: 200% auto;
+            transition: 0.5s;
+        }
+        .btn-random:hover {
+            background-position: right center;
+            box-shadow: 0 0 20px rgba(255, 0, 234, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            border: 1px solid theme('colors.glassBorder');
+            transition: all 0.3s ease;
+        }
+        .btn-outline:hover {
+            border-color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* タイムラインの装飾 */
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: theme('colors.neonMagenta');
+            box-shadow: 0 0 10px theme('colors.neonMagenta');
+            z-index: 10;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 0;
+            top: 10px;
+            bottom: -20px;
+            width: 2px;
+            background: linear-gradient(to bottom, theme('colors.neonMagenta'), rgba(255, 0, 234, 0.1));
+            z-index: 0;
+        }
+        .timeline-item:last-child .timeline-line {
+            display: none;
+        }
+
+        /* ローダーのアニメーション波紋 */
+        .loader-ripple {
+            position: absolute;
+            border: 2px solid theme('colors.neonCyan');
+            border-radius: 50%;
+            animation: ripple 1.5s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+        }
+        .loader-ripple:nth-child(2) {
+            animation-delay: -0.5s;
+        }
+        @keyframes ripple {
+            0% { top: 36px; left: 36px; width: 0; height: 0; opacity: 1; }
+            100% { top: 0px; left: 0px; width: 72px; height: 72px; opacity: 0; }
+        }
+
+        /* エラーメッセージアニメーション */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* 各結果要素のディレイ表示 */
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+        .stagger-5 { animation-delay: 0.5s; opacity: 0; }
+
+        /* スケールタブラジオ風装飾 */
+        .scale-tab-radio:checked + label {
+            background: rgba(0, 243, 255, 0.15);
+            border-color: theme('colors.neonCyan');
+            color: white;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
+
+    <!-- Header -->
+    <header class="text-center mb-10 w-full max-w-4xl animate-float">
+        <h1 class="font-display font-black text-5xl md:text-6xl tracking-wider mb-2 flex justify-center items-center gap-3 text-white">
+            <span class="material-symbols-rounded text-neon-cyan text-5xl md:text-6xl" style="font-variation-settings: 'FILL' 1;">graphic_eq</span>
+            Muse<span class="text-transparent bg-clip-text bg-gradient-to-r from-neonCyan to-neonPurple">Forge</span>
+        </h1>
+        <p class="text-gray-400 text-sm md:text-base tracking-widest uppercase">AI-Driven Music Production Assistant</p>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-4xl relative">
+        
+        <!-- === 入力セクション === -->
+        <section id="input-section" class="glass-card rounded-2xl p-6 md:p-8 mb-8 transition-all duration-500 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-neonCyan opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b border-white/10 pb-3">
+                <span class="material-symbols-rounded text-neon-cyan">tune</span>
+                インスピレーションの種
+            </h2>
+
+            <!-- タブメニュー -->
+            <div class="flex gap-1 mb-6 border-b border-white/10">
+                <button class="tab-btn active px-4 py-3 text-sm font-bold flex-1 flex items-center justify-center gap-2" data-tab="manual">
+                    <span class="material-symbols-rounded text-lg">sliders</span> パラメーター
+                </button>
+                <button class="tab-btn px-4 py-3 text-sm font-bold flex-1 flex items-center justify-center gap-2" data-tab="concept">
+                    <span class="material-symbols-rounded text-lg">description</span> コンセプト
+                </button>
+                <button class="tab-btn px-4 py-3 text-sm font-bold flex-1 flex items-center justify-center gap-2" data-tab="random">
+                    <span class="material-symbols-rounded text-lg">shuffle</span> 完全ランダム
+                </button>
+            </div>
+
+            <form id="app-form" class="space-y-6">
+                
+                <!-- タブ1: マニュアル入力 -->
+                <div id="tab-content-manual" class="tab-content block space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                        <div class="md:col-span-12">
+                            <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">music_note</span> メロディ音列 (任意)
+                            </label>
+                            <input type="text" id="input-melody" placeholder="例: C D E G, ドレミソ など浮かんでいるメロディ" class="cyber-input w-full rounded-xl px-4 py-3 text-sm placeholder-gray-500">
+                        </div>
+
+                        <div class="md:col-span-8 bg-black/20 rounded-xl p-4 border border-white/5">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="text-sm font-medium text-gray-300 flex items-center gap-1">
+                                    <span class="material-symbols-rounded text-sm">speed</span> テンポ (BPM)
+                                </label>
+                                <input type="number" id="input-bpm-number" value="120" min="40" max="250" class="cyber-input w-20 text-center rounded-lg py-1 text-sm font-mono text-neon-cyan bg-black/50">
+                            </div>
+                            <input type="range" id="input-bpm-slider" min="40" max="250" value="120" class="w-full mt-2">
+                            <div class="flex justify-between text-xs text-gray-500 mt-2 font-mono">
+                                <span>40</span>
+                                <span>145</span>
+                                <span>250</span>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-4 bg-black/20 rounded-xl p-4 border border-white/5 flex flex-col justify-center">
+                            <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">123</span> 拍子
+                            </label>
+                            <div class="relative">
+                                <select id="input-time-sig" class="cyber-input w-full rounded-lg px-4 py-2 appearance-none cursor-pointer">
+                                    <option value="4/4">4/4拍子 (Standard)</option>
+                                    <option value="3/4">3/4拍子 (Waltz)</option>
+                                    <option value="6/8">6/8拍子 (Swing/Ballad)</option>
+                                    <option value="5/4">5/4拍子 (Odd)</option>
+                                </select>
+                                <span class="material-symbols-rounded absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">album</span> 参考ジャンル
+                            </label>
+                            <div class="relative">
+                                <select id="input-genre" class="cyber-input w-full rounded-xl px-4 py-3 appearance-none cursor-pointer text-base">
+                                    <option value="" disabled selected>選択してください</option>
+                                    <option value="Pop">J-Pop / Pop</option>
+                                    <option value="Rock">Rock / Alternative</option>
+                                    <option value="EDM">EDM / Electronic</option>
+                                    <option value="LoFi">Lo-Fi / Chillhop</option>
+                                    <option value="RnB">R&B / Soul</option>
+                                    <option value="Jazz">Jazz / Fusion</option>
+                                    <option value="Anison">Anime / Idol</option>
+                                </select>
+                                <span class="material-symbols-rounded absolute right-4 top-1/2 -translate-y-1/2 text-neon-cyan pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">mood</span> 曲の雰囲気 <span class="text-xs text-gray-500 ml-1">(複数選択可)</span>
+                            </label>
+                            <div class="flex flex-wrap gap-2" id="mood-container">
+                                <!-- JS生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- タブ2: コンセプト入力 -->
+                <div id="tab-content-concept" class="tab-content hidden space-y-4">
+                    <div class="bg-black/20 rounded-xl p-5 border border-white/5">
+                        <label class="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                            <span class="material-symbols-rounded text-neon-magenta text-lg">auto_stories</span>
+                            ストーリーや世界観を文章で入力してください
+                        </label>
+                        <p class="text-xs text-gray-400 mb-3">AIが入力された文章から、BPM・ジャンル・雰囲気などを自動で分析し提案します。</p>
+                        <textarea id="input-concept-text" rows="4" class="cyber-input w-full rounded-xl px-4 py-3 text-sm placeholder-gray-600 resize-none" placeholder="例：&#10;記憶を消して別れるAIと人間の切ない曲&#10;夜の街を一人で歩く孤独な曲&#10;壊れそうな精神状態のまま笑っているような狂気的な曲"></textarea>
+                    </div>
+                </div>
+
+                <!-- タブ3: 完全ランダム -->
+                <div id="tab-content-random" class="tab-content hidden space-y-4 text-center py-8">
+                    <span class="material-symbols-rounded text-6xl text-neon-purple mb-4 opacity-80">casino</span>
+                    <h3 class="text-xl font-bold text-white mb-2">すべてを運命に委ねる</h3>
+                    <p class="text-gray-400 text-sm max-w-md mx-auto mb-6">
+                        ジャンル、BPM、雰囲気、そして曲のテーマまで、すべて完全にランダムな組み合わせでインスピレーションを生成します。
+                    </p>
+                </div>
+
+                <!-- エラーメッセージ -->
+                <div id="error-message" class="hidden bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg flex items-center gap-2 text-sm mt-4">
+                    <span class="material-symbols-rounded text-red-400">error</span>
+                    <span id="error-text">入力内容に不足があります。</span>
+                </div>
+
+                <!-- ボタンエリア -->
+                <div class="pt-6 flex flex-col sm:flex-row gap-4 items-center justify-end border-t border-white/5">
+                    <button type="button" id="btn-clear" class="btn-outline w-full sm:w-auto px-6 py-3 rounded-xl text-sm font-medium text-gray-300 flex items-center justify-center gap-2">
+                        <span class="material-symbols-rounded text-lg">refresh</span> クリア
+                    </button>
+                    <button type="button" id="btn-submit-manual" class="btn-generate w-full sm:w-auto px-8 py-3 rounded-xl text-base font-bold text-white flex items-center justify-center gap-2 shadow-lg">
+                        <span class="material-symbols-rounded">auto_awesome</span> パラメーターから生成
+                    </button>
+                    <button type="button" id="btn-submit-concept" class="btn-generate hidden w-full sm:w-auto px-8 py-3 rounded-xl text-base font-bold text-white flex items-center justify-center gap-2 shadow-lg">
+                        <span class="material-symbols-rounded">psychology</span> 文章からAI分析生成
+                    </button>
+                    <button type="button" id="btn-submit-random" class="btn-random hidden w-full sm:w-auto px-8 py-3 rounded-xl text-base font-bold text-white flex items-center justify-center gap-2 shadow-lg">
+                        <span class="material-symbols-rounded">shuffle</span> 完全ランダム生成
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- === ローディング === -->
+        <div id="loading-overlay" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center glass-card rounded-2xl">
+            <div class="relative w-[76px] h-[76px] mb-6">
+                <div class="loader-ripple"></div>
+                <div class="loader-ripple"></div>
+                <span class="material-symbols-rounded absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-neon-cyan text-3xl animate-pulse">model_training</span>
+            </div>
+            <h3 class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-neonCyan to-neonMagenta animate-pulse" id="loading-title">AIが音楽構成を構築中...</h3>
+            <p class="text-gray-400 text-sm mt-2 font-mono" id="loading-text">Analyzing parameters...</p>
+        </div>
+
+        <!-- === 結果セクション === -->
+        <section id="result-section" class="hidden space-y-6">
+            
+            <div class="text-center animate-fade-in-up stagger-1 mb-4">
+                <span class="inline-block py-1 px-3 rounded-full bg-white/10 border border-white/20 text-xs font-mono text-neon-cyan mb-3">RESULT GENERATED</span>
+            </div>
+
+            <!-- 0. 基本情報カード -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 animate-fade-in-up stagger-1 relative overflow-hidden bg-gradient-to-br from-black/80 to-blue-900/20 border-l-4 border-l-neonCyan">
+                <h2 id="res-title" class="text-3xl md:text-4xl font-bold font-display tracking-wider text-white mb-2 flex items-center gap-3">
+                    Untitled Track
+                </h2>
+                <p id="res-concept-desc" class="text-gray-400 text-sm mb-6 pb-4 border-b border-white/10">--</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-black/30 p-3 rounded-lg border border-white/5">
+                        <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">album</span> ジャンル</div>
+                        <div id="res-info-genre" class="font-bold text-neon-cyan">--</div>
+                    </div>
+                    <div class="bg-black/30 p-3 rounded-lg border border-white/5">
+                        <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">speed</span> BPM</div>
+                        <div id="res-info-bpm" class="font-bold text-white font-mono text-lg">--</div>
+                    </div>
+                    <div class="bg-black/30 p-3 rounded-lg border border-white/5">
+                        <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">123</span> 拍子</div>
+                        <div id="res-info-time" class="font-bold text-white font-mono text-lg">--</div>
+                    </div>
+                    <div class="bg-black/30 p-3 rounded-lg border border-white/5">
+                        <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="material-symbols-rounded text-[14px]">mood</span> 雰囲気</div>
+                        <div id="res-info-mood" class="font-bold text-neon-magenta text-sm leading-tight">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. スケール提案＆コード進行 (NEW) -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 animate-fade-in-up stagger-2 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-neonCyan"></div>
+                <h3 class="text-xl font-bold mb-5 flex items-center gap-2 text-neon-cyan">
+                    <span class="material-symbols-rounded">music_note</span> おすすめのスケールとコード進行
+                </h3>
+
+                <!-- スケール選択タブ群 -->
+                <div class="flex flex-wrap gap-3 mb-6 border-b border-white/10 pb-4" id="scale-tabs-container">
+                    <!-- JS生成 -->
+                </div>
+
+                <!-- 選択中スケールの詳細パネル -->
+                <div id="scale-detail-panel" class="bg-black/40 rounded-xl p-5 border border-white/5">
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <!-- 構成音 -->
+                        <div class="lg:col-span-1">
+                            <h4 class="text-sm text-gray-400 mb-2 flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">piano</span> スケール構成音
+                            </h4>
+                            <div class="bg-black/50 p-4 rounded-lg border border-white/5">
+                                <div id="res-scale-notes" class="font-mono text-lg tracking-widest text-white font-bold text-center">
+                                    C - D - E - F - G - A - B
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 使えるコード群 -->
+                        <div class="lg:col-span-2">
+                            <h4 class="text-sm text-gray-400 mb-2 flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">grid_view</span> このスケールで使いやすいコード
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="bg-black/50 p-3 rounded-lg border border-white/5 flex flex-wrap gap-2 items-center" id="res-scale-triads">
+                                    <!-- JS生成 -->
+                                </div>
+                                <div class="bg-black/50 p-3 rounded-lg border border-white/5 flex flex-wrap gap-2 items-center" id="res-scale-sevenths">
+                                    <!-- JS生成 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 進行候補 -->
+                    <div>
+                        <h4 class="text-sm text-gray-400 mb-3 flex items-center gap-1">
+                            <span class="material-symbols-rounded text-sm">route</span> コード進行のアイデア
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="progression-container">
+                            <!-- JS生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 曲構成案 & 3. 歌詞の方向性 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 曲構成案 -->
+                <div class="glass-card rounded-2xl p-6 md:p-8 animate-fade-in-up stagger-3 relative">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-neonMagenta"></div>
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-neon-magenta">
+                        <span class="material-symbols-rounded">view_timeline</span> 曲構成案
+                    </h3>
+                    <div class="bg-black/30 rounded-xl p-5 border border-white/5">
+                        <div class="flex justify-between items-center mb-4 text-sm border-b border-white/10 pb-2">
+                            <span class="text-gray-400">Total Length: <span id="res-total-time" class="text-white font-mono">--:--</span></span>
+                        </div>
+                        <ul class="relative ml-2 mt-4" id="structure-container">
+                            <!-- JS生成 -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 歌詞の方向性 -->
+                <div class="glass-card rounded-2xl p-6 md:p-8 animate-fade-in-up stagger-4 relative flex flex-col">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-neonPurple"></div>
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-neon-purple">
+                        <span class="material-symbols-rounded">edit_note</span> 歌詞の方向性
+                    </h3>
+                    <div class="space-y-5 flex-grow">
+                        <div>
+                            <h4 class="text-sm text-gray-400 mb-2 font-medium">メインテーマ</h4>
+                            <p id="res-theme" class="text-lg font-bold text-white border-l-2 border-neonPurple pl-3 py-1 bg-gradient-to-r from-neonPurple/20 to-transparent">
+                                --
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-sm text-gray-400 mb-3 font-medium">インスピレーション・キーワード</h4>
+                            <div class="flex flex-wrap gap-2" id="keyword-container">
+                                <!-- JS生成 -->
+                            </div>
+                        </div>
+
+                        <!-- ワンフレーズ例 -->
+                        <div class="bg-black/40 rounded-xl p-4 border border-white/10 relative overflow-hidden mt-4">
+                            <div class="absolute -right-2 -top-2 opacity-10"><span class="material-symbols-rounded text-6xl">format_quote</span></div>
+                            <h4 class="text-xs text-gray-400 mb-2 font-medium">ワンフレーズ例</h4>
+                            <p id="res-phrase" class="text-white italic font-serif leading-relaxed text-lg">
+                                --
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-black/30 rounded-xl p-4 border border-white/5 mt-5">
+                        <h4 class="text-sm text-gray-400 mb-2 font-medium flex items-center gap-1">
+                            <span class="material-symbols-rounded text-sm">palette</span> イメージカラー
+                        </h4>
+                        <div class="flex items-center gap-3">
+                            <div id="res-color-box" class="w-10 h-10 rounded-lg shadow-lg" style="background: #fff;"></div>
+                            <span id="res-color-name" class="font-mono text-sm">#FFFFFF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="flex justify-center pt-8 pb-4 animate-fade-in-up stagger-5">
+                <button type="button" id="btn-recreate" class="btn-outline px-8 py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 hover:text-neonCyan hover:border-neonCyan hover:bg-neonCyan/10">
+                    <span class="material-symbols-rounded">replay</span> もう一度作成画面に戻る
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-xs text-gray-600 font-mono w-full pb-6">
+        &copy; 2026 MuseForge App. Academic Assignment Project.
+    </footer>
+
+    <!-- ==========================================
+         JavaScript ロジック
+    =========================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- UI Elements ---
+            const form = document.getElementById('app-form');
+            const bpmSlider = document.getElementById('input-bpm-slider');
+            const bpmNumber = document.getElementById('input-bpm-number');
+            
+            const btnSubmitManual = document.getElementById('btn-submit-manual');
+            const btnSubmitConcept = document.getElementById('btn-submit-concept');
+            const btnSubmitRandom = document.getElementById('btn-submit-random');
+            const btnClear = document.getElementById('btn-clear');
+            const btnRecreate = document.getElementById('btn-recreate');
+            
+            const errorMsg = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            const loadingTitle = document.getElementById('loading-title');
+            
+            const inputSection = document.getElementById('input-section');
+            const resultSection = document.getElementById('result-section');
+
+            let currentMode = 'manual'; // 'manual', 'concept', 'random'
+            let generatedScalesData = []; // 生成されたスケール候補データ保持用
+
+            // --- データの定義 ---
+            const moods = [
+                { id: 'm1', label: '明るい', icon: 'lightbulb' },
+                { id: 'm2', label: '暗い', icon: 'dark_mode' },
+                { id: 'm3', label: '切ない', icon: 'water_drop' },
+                { id: 'm4', label: '激しい', icon: 'local_fire_department' },
+                { id: 'm5', label: 'チル', icon: 'nightlight' },
+                { id: 'm6', label: '壮大', icon: 'landscape' },
+                { id: 'm7', label: '疾走感', icon: 'air' },
+                { id: 'm8', label: 'おしゃれ', icon: 'diamond' }
+            ];
+
+            const genresList = ['Pop', 'Rock', 'EDM', 'LoFi', 'RnB', 'Jazz', 'Anison'];
+
+            // 12音階
+            const notesArray = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+            // スケール定義
+            const dbScales = [
+                { id: 'major', name: 'Major', type: 'major', char: '明るい・王道', moods: ['明るい', '壮大', 'チル'], intervals: [0, 2, 4, 5, 7, 9, 11], triads: ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'viidim'], sevenths: ['IM7', 'ii7', 'iii7', 'IVM7', 'V7', 'vi7', 'viim7b5'] },
+                { id: 'minor', name: 'Natural Minor', type: 'minor', char: '暗い・切ない', moods: ['暗い', '切ない', '激しい'], intervals: [0, 2, 3, 5, 7, 8, 10], triads: ['i', 'iidim', 'bIII', 'iv', 'v', 'bVI', 'bVII'], sevenths: ['im7', 'iim7b5', 'bIIIM7', 'ivm7', 'vm7', 'bVIM7', 'bVII7'] },
+                { id: 'dorian', name: 'Dorian', type: 'minor', char: 'エモ・都会的', moods: ['チル', 'おしゃれ', '切ない'], intervals: [0, 2, 3, 5, 7, 9, 10], triads: ['i', 'ii', 'bIII', 'IV', 'v', 'vidim', 'bVII'], sevenths: ['im7', 'iim7', 'bIIIM7', 'IV7', 'vm7', 'vim7b5', 'bVIIM7'] },
+                { id: 'phrygian', name: 'Phrygian', type: 'minor', char: '不穏・エスニック', moods: ['激しい', '暗い'], intervals: [0, 1, 3, 5, 7, 8, 10], triads: ['i', 'bII', 'bIII', 'iv', 'vdim', 'bVI', 'bvii'], sevenths: ['im7', 'bIIM7', 'bIIIM7', 'ivm7', 'vm7b5', 'bVIM7', 'bviim7'] },
+                { id: 'lydian', name: 'Lydian', type: 'major', char: '浮遊感・夢', moods: ['明るい', '壮大', 'おしゃれ', 'チル'], intervals: [0, 2, 4, 6, 7, 9, 11], triads: ['I', 'II', 'iii', '#ivdim', 'V', 'vi', 'vii'], sevenths: ['IM7', 'II7', 'iiim7', '#ivm7b5', 'VM7', 'vim7', 'viim7'] },
+                { id: 'mixolydian', name: 'Mixolydian', type: 'major', char: '疾走感・ブルージー', moods: ['明るい', '疾走感', '激しい'], intervals: [0, 2, 4, 5, 7, 9, 10], triads: ['I', 'ii', 'iiidim', 'IV', 'v', 'vi', 'bVII'], sevenths: ['I7', 'ii7', 'iiim7b5', 'IVM7', 'vm7', 'vim7', 'bVIIM7'] },
+                { id: 'hminor', name: 'Harmonic Minor', type: 'minor', char: '緊張感・クラシカル', moods: ['暗い', '激しい', '壮大'], intervals: [0, 2, 3, 5, 7, 8, 11], triads: ['i', 'iidim', 'bIIIaug', 'iv', 'V', 'bVI', 'viidim'], sevenths: ['imM7', 'iim7b5', 'bIIIaugM7', 'ivm7', 'V7', 'bVIM7', 'viidim7'] },
+                { id: 'wholetone', name: 'Whole Tone', type: 'special', char: '不思議・幻覚', moods: ['チル', 'おしゃれ'], intervals: [0, 2, 4, 6, 8, 10], triads: ['Iaug', 'IIaug', 'IIIaug', '#IVaug', '#Vaug', '#VIaug'], sevenths: ['I7#5', 'II7#5', 'III7#5', '#IV7#5', '#V7#5', '#VI7#5'] },
+                { id: 'diminished', name: 'Diminished (HW)', type: 'special', char: '緊迫・不規則', moods: ['激しい', '暗い'], intervals: [0, 1, 3, 4, 6, 7, 9, 10], triads: ['Idim', 'bIIdim', 'bIIIdim', 'IIIdim', '#IVdim', 'Vdim', 'VIdim', 'bVIIdim'], sevenths: ['Idim7', 'bIIdim7', 'bIIIdim7', 'IIIdim7', '#IVdim7', 'Vdim7', 'VIdim7', 'bVIIdim7'] }
+            ];
+
+            // 進行パターンの定義 (Roman Numeral)
+            const dbProgressions = [
+                // 王道寄り
+                { cat: '王道寄り', type: 'major', roman: 'I - V - vi - IV', desc: 'ポップスで最も定番で安心感のある進行。' },
+                { cat: '王道寄り', type: 'major', roman: 'IVM7 - V7 - iiim7 - vi7', desc: 'J-Pop王道。サビで感情を揺さぶる。' },
+                { cat: '王道寄り', type: 'minor', roman: 'vi - IV - I - V', desc: 'マイナー軸の力強く定番の進行。' },
+                { cat: '王道寄り', type: 'minor', roman: 'i - bVI - bIII - bVII', desc: '洋楽やEDMで頻出の進行。' },
+                { cat: '王道寄り', type: 'any', roman: 'I - vi - IV - V', desc: 'ノスタルジックでストレートな進行。' },
+                
+                // エモ寄り
+                { cat: 'エモ寄り', type: 'major', roman: 'IVM7 - ivm7 - iiim7 - VI7', desc: 'サブドミナントマイナーからの切ない変化。' },
+                { cat: 'エモ寄り', type: 'major', roman: 'ii7 - V7 - IM7 - VI7', desc: 'ジャジーなツーファイブにセカンダリを添えて。' },
+                { cat: 'エモ寄り', type: 'minor', roman: 'i - bVII - bVI - V7', desc: '情熱的で哀愁漂うアンダルシア進行。' },
+                { cat: 'エモ寄り', type: 'any', roman: 'bVI - bVII - IM7', desc: 'ドラマチックに解決するマリオカデンツ。' },
+
+                // 不穏寄り
+                { cat: '不穏寄り', type: 'minor', roman: 'i - bVI - iv - V7', desc: 'ハーモニックマイナー特有のクラシカルな緊張感。' },
+                { cat: '不穏寄り', type: 'any', roman: 'i - bii - i - bii', desc: 'フリジアンスケール特有の不気味な響き。' },
+                { cat: '不穏寄り', type: 'minor', roman: 'vi - #vdim7 - vi - II7', desc: '半音でぶつかるディミニッシュの緊迫感。' },
+                { cat: '不穏寄り', type: 'special', roman: 'Idim - bIIdim - bIIIdim - Idim', desc: 'ディミニッシュスケールの連続による不安定さ。' },
+                
+                // 浮遊感寄り
+                { cat: '浮遊感寄り', type: 'major', roman: 'IM7 - II7 - ivm7 - bVII7', desc: 'リディアンスケールを感じさせるモーダルな展開。' },
+                { cat: '浮遊感寄り', type: 'any', roman: 'IM7 - bIIM7 - IM7 - bIIM7', desc: '調性が曖昧になるコードの並行移動。' },
+                { cat: '浮遊感寄り', type: 'major', roman: 'I - v - IV - iv', desc: 'メジャーなのに切なく浮遊する借用和音。' },
+                { cat: '浮遊感寄り', type: 'special', roman: 'Iaug - IIaug - #IVaug - Iaug', desc: 'ホールトーンによる夢の中にいるような浮遊感。' },
+
+                // 変則寄り
+                { cat: '変則寄り', type: 'major', roman: 'I - bIII - bVI - bII', desc: '次々と転調するようなトリッキーな進行。' },
+                { cat: '変則寄り', type: 'any', roman: 'I - bVII - IV - I', desc: 'ロックやミクソリディアン特有の進行。' },
+                { cat: '変則寄り', type: 'any', roman: 'vi - bVIaug - I/V - #IVm7b5', desc: 'ベースが半音ずつ下降する美しいクリシェ。' }
+            ];
+
+            const dbThemes = {
+                '明るい': { theme: '希望と前進', color: '#ffd700', words: ['青空', '未来', '走る', '笑顔', '光', '明日'] },
+                '暗い': { theme: '孤独と葛藤', color: '#2c3e50', words: ['影', '夜', '迷路', '沈黙', '冷たい', '底'] },
+                '切ない': { theme: '失われた記憶と郷愁', color: '#a29bfe', words: ['雨', '嘘', '届かない', '記憶', '夕暮れ', '涙'] },
+                '激しい': { theme: '抑圧からの解放', color: '#ff4757', words: ['衝動', '壊す', '叫び', '炎', '境界', '命'] },
+                'チル': { theme: '日常の小さなオアシス', color: '#00cec9', words: ['コーヒー', '微睡み', '風', '街の音', '夜更かし', '星'] },
+                '壮大': { theme: '世界との繋がり', color: '#6c5ce7', words: ['宇宙', '海', '永遠', '歴史', '翼', '果て'] },
+                '疾走感': { theme: '限界を越える瞬間', color: '#00f3ff', words: ['風', '加速', '一瞬', '鼓動', '駆け抜ける', '軌跡'] },
+                'おしゃれ': { theme: '都会の夜と駆け引き', color: '#fd79a8', words: ['ネオン', 'グラス', '秘密', 'ステップ', '視線', 'ルージュ'] },
+            };
+
+            const dbStructures = {
+                Standard: [
+                    { name: 'Intro', bars: 8, desc: 'メインリフで印象的に引き込む。' },
+                    { name: 'Aメロ', bars: 8, desc: '情景描写。抑えめの伴奏。' },
+                    { name: 'Bメロ', bars: 8, desc: 'リズムに変化をつけ、期待感を煽る。' },
+                    { name: 'サビ', bars: 16, desc: '最もキャッチーなメロディとフル楽器で。' },
+                    { name: '間奏', bars: 8, desc: 'ソロ楽器のフィーチャー。' },
+                    { name: 'サビ', bars: 16, desc: '感情のピーク。最後はアレンジを変える。' },
+                    { name: 'Outro', bars: 8, desc: '余韻を残しながらフェードアウト。' }
+                ],
+                EDM: [
+                    { name: 'Intro', bars: 16, desc: 'DJがミックスしやすいビートから。' },
+                    { name: 'Break', bars: 16, desc: 'ビートが消え、メロディが際立つ。' },
+                    { name: 'Build-up', bars: 8, desc: 'スネアロール等で極限まで煽る。' },
+                    { name: 'Drop', bars: 16, desc: '太いベースとシンセの爆発。' },
+                    { name: 'Break 2', bars: 16, desc: '一度落ち着かせて深呼吸。' },
+                    { name: 'Build-up 2', bars: 8, desc: '再びエネルギーを充填。' },
+                    { name: 'Drop 2', bars: 16, desc: '1回目よりさらに激しいアレンジ。' },
+                    { name: 'Outro', bars: 16, desc: '徐々に要素を減らしビートアウト。' }
+                ],
+                Short: [
+                    { name: 'Intro', bars: 4, desc: '短いSEやボイスドロップで即座に開始。' },
+                    { name: 'サビ', bars: 8, desc: 'いきなりサビから始まりインパクトを。' },
+                    { name: 'Aメロ', bars: 8, desc: 'ビートを落としてストーリーを展開。' },
+                    { name: 'サビ', bars: 8, desc: '短く畳み掛けるように再度ピークへ。' },
+                    { name: 'Outro', bars: 4, desc: 'スパッと終わらせてリピート再生を促す。' }
+                ]
+            };
+
+            const titlePrefixes = ['Lost', 'Neon', 'Midnight', 'Silent', 'Cyber', 'Eternal', 'Last', 'Broken', 'Blue', 'Distant'];
+            const titleSuffixes = ['Memories', 'City', 'Heart', 'Dreams', 'World', 'Tears', 'Echo', 'Soul', 'Light', 'Sky'];
+
+            const genrePhrases = {
+                Pop: ['ねえ、君に届くようにこの空へ歌うよ', '当たり前の日常が、今は輝いて見えるんだ', 'さよならの代わりに、笑顔で手を振った'],
+                Rock: ['壊れそうな夜を切り裂いて、僕は叫ぶ', '誰かの決めたルールなんて、全部燃やしてしまえ', '限界なんて言葉は、もう辞書から消した'],
+                EDM: ['重なるビートが、新しい世界への扉を開く', '光の波に飲まれて、僕らは一つになる', '止まらない衝動、今夜だけは忘れさせて'],
+                LoFi: ['雨音だけが響く部屋で、君の香りを思い出してる', 'コーヒーの湯気越しに見る、変わらない街並み', '静かに流れる時間の中で、少しだけ眠ろう'],
+                RnB: ['触れられない距離が、余計に心を引き寄せる', 'ネオンに溶けていく、二人の甘い嘘', '言葉じゃ足りないから、このリズムに乗せて'],
+                Jazz: ['グラスの氷が溶ける音、君の視線が交差する', '予定調和なんてつまらない、アドリブでいこう', '真夜中の静寂を飾る、ため息とメロディ'],
+                Anison: ['何千回倒れても、守りたい未来があるから！', '繋いだ手は絶対に離さない、奇跡を信じて', '魔法が解ける前に、君へ走るんだ']
+            };
+
+            const conceptRules = [
+                { words: ['AI', '機械', 'ロボット', '電脳', 'サイバー', '未来'], genre: 'EDM', mood: '切ない', bpmRange: [120, 140], timeSig: '4/4' },
+                { words: ['夜', '孤独', '一人', '静か', '月', '街', '歩く'], genre: 'LoFi', mood: 'チル', bpmRange: [70, 90], timeSig: '4/4' },
+                { words: ['壊れ', '狂気', '精神', '病み', '叫び', '限界', '笑う'], genre: 'Rock', mood: '激しい', bpmRange: [160, 200], timeSig: '4/4' },
+                { words: ['恋', '愛', '好き', '君', '涙', '別れ', 'ありがとう'], genre: 'Pop', mood: '切ない', bpmRange: [80, 120], timeSig: '4/4' },
+                { words: ['魔法', 'ファンタジー', '異世界', '冒険', '空', '奇跡'], genre: 'Anison', mood: '壮大', bpmRange: [150, 180], timeSig: '4/4' },
+                { words: ['おしゃれ', 'カフェ', 'ワイン', '夜景', '大人', '都会'], genre: 'Jazz', mood: 'おしゃれ', bpmRange: [100, 130], timeSig: '4/4' },
+                { words: ['踊る', 'クラブ', 'パーティー', '最高', '夏', '海', '太陽'], genre: 'EDM', mood: '明るい', bpmRange: [125, 135], timeSig: '4/4' },
+                { words: ['走る', '風', '加速', '一瞬', '自転車'], genre: 'Rock', mood: '疾走感', bpmRange: [170, 190], timeSig: '4/4' }
+            ];
+
+            // --- ユーティリティ ---
+            function randInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            function getRandomElement(arr) {
+                return arr[Math.floor(Math.random() * arr.length)];
+            }
+
+            function getNoteName(rootNote, semitoneOffset) {
+                const rootIdx = notesArray.indexOf(rootNote);
+                return notesArray[(rootIdx + semitoneOffset + 12) % 12];
+            }
+
+            // Roman Numeral から実コードへの簡易パーサー
+            function parseSingleRoman(romanStr, rootNote) {
+                const romanMap = { 'VII':11, 'vii':11, 'VI':9, 'vi':9, 'IV':5, 'iv':5, 'V':7, 'v':7, 'III':4, 'iii':4, 'II':2, 'ii':2, 'I':0, 'i':0 };
+                const regex = /^(b|#)?(VII|vii|VI|vi|IV|iv|V|v|III|iii|II|ii|I|i)(.*)$/;
+                const match = romanStr.match(regex);
+                if (!match) return romanStr;
+                
+                const accidental = match[1] || '';
+                const numeral = match[2];
+                const quality = match[3] || '';
+                
+                let offset = romanMap[numeral];
+                if (accidental === 'b') offset -= 1;
+                if (accidental === '#') offset += 1;
+                
+                let addMinor = '';
+                if (numeral === numeral.toLowerCase() && !quality.startsWith('m') && !quality.startsWith('dim') && !quality.startsWith('aug') && !quality.startsWith('M') && quality !== '7') {
+                    addMinor = 'm';
+                }
+                
+                const noteName = getNoteName(rootNote, offset);
+                return noteName + addMinor + quality;
+            }
+
+            function parseRomanProgression(progressionStr, rootNote) {
+                return progressionStr.split(' - ').map(chord => {
+                    const parts = chord.split('/');
+                    const mainChord = parseSingleRoman(parts[0], rootNote);
+                    if (parts.length > 1) {
+                        const bassChord = parseSingleRoman(parts[1], rootNote);
+                        const bassNote = bassChord.replace(/[^A-G#b]/g, '');
+                        return `${mainChord}/${bassNote}`;
+                    }
+                    return mainChord;
+                }).join(' - ');
+            }
+
+            // --- 初期化処理 ---
+            function initUI() {
+                const moodContainer = document.getElementById('mood-container');
+                moodContainer.innerHTML = '';
+                moods.forEach(mood => {
+                    const html = `
+                        <div>
+                            <input type="checkbox" id="${mood.id}" value="${mood.label}" class="mood-checkbox hidden">
+                            <label for="${mood.id}" class="mood-label flex items-center gap-1 cursor-pointer px-4 py-2 rounded-full border border-gray-600 bg-black/40 text-sm text-gray-300 select-none hover:text-white">
+                                <span class="material-symbols-rounded text-sm">${mood.icon}</span> ${mood.label}
+                            </label>
+                        </div>
+                    `;
+                    moodContainer.insertAdjacentHTML('beforeend', html);
+                });
+
+                bpmSlider.addEventListener('input', (e) => { bpmNumber.value = e.target.value; });
+                bpmNumber.addEventListener('input', (e) => {
+                    let val = parseInt(e.target.value);
+                    if(val < 40) val = 40;
+                    if(val > 250) val = 250;
+                    bpmSlider.value = val;
+                });
+
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        switchTab(e.currentTarget.getAttribute('data-tab'));
+                    });
+                });
+            }
+
+            function switchTab(tabId) {
+                currentMode = tabId;
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    if (btn.getAttribute('data-tab') === tabId) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+
+                btnSubmitManual.classList.add('hidden');
+                btnSubmitConcept.classList.add('hidden');
+                btnSubmitRandom.classList.add('hidden');
+                if (tabId === 'manual') btnSubmitManual.classList.remove('hidden');
+                if (tabId === 'concept') btnSubmitConcept.classList.remove('hidden');
+                if (tabId === 'random') btnSubmitRandom.classList.remove('hidden');
+
+                hideError();
+            }
+
+            function getParams() {
+                let params = { title: "", desc: "", genre: "", bpm: 120, timeSig: "4/4", selectedMoods: [] };
+
+                if (currentMode === 'manual') {
+                    params.genre = document.getElementById('input-genre').value;
+                    params.bpm = parseInt(document.getElementById('input-bpm-number').value);
+                    params.timeSig = document.getElementById('input-time-sig').value;
+                    params.selectedMoods = Array.from(document.querySelectorAll('.mood-checkbox:checked')).map(el => el.value);
+                    
+                    if (!params.genre) { showError("参考ジャンルを選択してください。"); return null; }
+                    if (params.selectedMoods.length === 0) { showError("曲の雰囲気を少なくとも1つ選択してください。"); return null; }
+                    params.desc = "手動で設定されたパラメーターに基づく生成";
+                } 
+                else if (currentMode === 'concept') {
+                    const text = document.getElementById('input-concept-text').value.trim();
+                    if (!text) { showError("コンセプトとなる文章を入力してください。"); return null; }
+                    params.desc = `「${text}」というコンセプトに基づくAI分析`;
+
+                    let matchedRule = null, maxMatchCount = 0;
+                    conceptRules.forEach(rule => {
+                        let matchCount = 0;
+                        rule.words.forEach(word => { if (text.includes(word)) matchCount++; });
+                        if (matchCount > maxMatchCount) { maxMatchCount = matchCount; matchedRule = rule; }
+                    });
+
+                    if (matchedRule) {
+                        params.genre = matchedRule.genre;
+                        params.bpm = randInt(matchedRule.bpmRange[0], matchedRule.bpmRange[1]);
+                        params.timeSig = matchedRule.timeSig;
+                        params.selectedMoods = [matchedRule.mood];
+                    } else {
+                        params.genre = 'Pop'; params.bpm = randInt(90, 130); params.timeSig = '4/4'; params.selectedMoods = ['切ない', 'チル'];
+                    }
+                }
+                else if (currentMode === 'random') {
+                    params.genre = getRandomElement(genresList);
+                    params.bpm = randInt(60, 200);
+                    params.timeSig = getRandomElement(['4/4', '4/4', '4/4', '3/4', '6/8', '5/4']);
+                    let shuffledMoods = [...moods].sort(() => 0.5 - Math.random());
+                    params.selectedMoods = shuffledMoods.slice(0, randInt(1, 3)).map(m => m.label);
+                    params.desc = "完全な偶然が導き出したインスピレーション";
+                }
+
+                params.title = `${getRandomElement(titlePrefixes)} ${getRandomElement(titleSuffixes)}`;
+                hideError();
+                return params;
+            }
+
+            function showError(msg) {
+                errorText.textContent = msg;
+                errorMsg.classList.remove('hidden');
+                errorMsg.classList.remove('shake');
+                void errorMsg.offsetWidth;
+                errorMsg.classList.add('shake');
+            }
+
+            function hideError() { errorMsg.classList.add('hidden'); }
+
+            function executeGeneration() {
+                const params = getParams();
+                if(!params) return;
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                inputSection.classList.add('opacity-50', 'pointer-events-none');
+                resultSection.classList.add('hidden');
+                loadingOverlay.classList.remove('hidden');
+                
+                loadingTitle.textContent = currentMode === 'random' ? "運命のダイスをロール中..." : (currentMode === 'concept' ? "文章から感情と言葉を抽出中..." : "AIが音楽構成を構築中...");
+
+                const logTexts = ["Analyzing parameters...", "Determining harmonic scales...", "Calculating chord progressions...", "Structuring timeline patterns...", "Extracting lyric keywords...", "Finalizing inspiration..."];
+                let logIdx = 0;
+                const logInterval = setInterval(() => {
+                    logIdx++;
+                    if(logIdx < logTexts.length) loadingText.textContent = logTexts[logIdx];
+                }, 400);
+
+                setTimeout(() => {
+                    clearInterval(logInterval);
+                    processResult(params);
+                    showResult();
+                }, 2500);
+            }
+
+            function processResult(params) {
+                const { title, desc, genre, bpm, timeSig, selectedMoods } = params;
+
+                // 0. 基本情報
+                document.getElementById('res-title').textContent = title;
+                document.getElementById('res-concept-desc').textContent = desc;
+                document.getElementById('res-info-genre').textContent = genre;
+                document.getElementById('res-info-bpm').textContent = bpm;
+                document.getElementById('res-info-time').textContent = timeSig;
+                document.getElementById('res-info-mood').textContent = selectedMoods.join(' / ');
+
+                // 1. スケール候補の生成
+                const rootNote = getRandomElement(notesArray);
+                
+                // Moodに基づくスケールのスコアリング
+                let scoredScales = dbScales.map(scale => {
+                    let score = 0;
+                    selectedMoods.forEach(mood => { if(scale.moods.includes(mood)) score += 2; });
+                    score += Math.random(); // 同点時のゆらぎ
+                    return { ...scale, score };
+                });
+                scoredScales.sort((a, b) => b.score - a.score);
+                
+                // 上位3〜4つを選出
+                const scaleCount = randInt(3, 4);
+                generatedScalesData = scoredScales.slice(0, scaleCount).map(s => {
+                    return {
+                        id: s.id,
+                        name: `${rootNote} ${s.name}`,
+                        root: rootNote,
+                        type: s.type,
+                        char: s.char,
+                        notes: s.intervals.map(iv => getNoteName(rootNote, iv)),
+                        triads: s.triads.map(rm => parseSingleRoman(rm, rootNote)),
+                        sevenths: s.sevenths.map(rm => parseSingleRoman(rm, rootNote))
+                    };
+                });
+
+                // スケールタブの描画
+                const tabsContainer = document.getElementById('scale-tabs-container');
+                tabsContainer.innerHTML = '';
+                generatedScalesData.forEach((scale, index) => {
+                    const isChecked = index === 0 ? 'checked' : '';
+                    const html = `
+                        <div>
+                            <input type="radio" name="scale-select" id="scale-opt-${index}" value="${index}" class="scale-tab-radio hidden" ${isChecked}>
+                            <label for="scale-opt-${index}" class="cursor-pointer px-4 py-2 rounded-full border border-gray-600 bg-black/40 text-sm font-bold flex items-center gap-2 transition-all hover:bg-white/5">
+                                ${scale.name} <span class="text-[10px] font-normal px-2 py-0.5 rounded bg-white/10 opacity-80">${scale.char}</span>
+                            </label>
+                        </div>
+                    `;
+                    tabsContainer.insertAdjacentHTML('beforeend', html);
+                });
+
+                // タブ切り替えイベント
+                document.querySelectorAll('input[name="scale-select"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => { renderScaleDetail(e.target.value); });
+                });
+
+                // 初回描画
+                renderScaleDetail(0);
+
+                // 2. 曲構成案
+                let structureType = 'Standard';
+                if (genre === 'EDM') structureType = 'EDM';
+                if (bpm > 160 && (genre === 'Rock' || genre === 'Anison')) structureType = 'Short';
+
+                const structureData = dbStructures[structureType];
+                const structureContainer = document.getElementById('structure-container');
+                structureContainer.innerHTML = '';
+                let totalBars = 0;
+                structureData.forEach(part => {
+                    totalBars += part.bars;
+                    structureContainer.insertAdjacentHTML('beforeend', `
+                        <li class="timeline-item relative pl-6 pb-6">
+                            <div class="timeline-line"></div>
+                            <h4 class="text-base font-bold text-gray-200 flex items-baseline gap-2">
+                                ${part.name} <span class="text-xs font-mono text-neon-magenta bg-neonMagenta/10 px-1.5 py-0.5 rounded">${part.bars} bars</span>
+                            </h4>
+                            <p class="text-sm text-gray-400 mt-1">${part.desc}</p>
+                        </li>
+                    `);
+                });
+
+                const beatsPerBar = parseInt(timeSig.split('/')[0]);
+                const totalSeconds = Math.round((totalBars * beatsPerBar) * 60 / bpm);
+                document.getElementById('res-total-time').textContent = `${Math.floor(totalSeconds / 60)}:${(totalSeconds % 60).toString().padStart(2, '0')} (約${totalBars}小節)`;
+
+                // 3. 歌詞の方向性
+                let mainThemeStr = "", keywords = [], mixColor = {r:0, g:0, b:0};
+                selectedMoods.forEach(mood => {
+                    const data = dbThemes[mood];
+                    if(data) {
+                        mainThemeStr += data.theme + " × ";
+                        keywords.push(...[...data.words].sort(() => 0.5 - Math.random()).slice(0, 3));
+                        const hex = data.color.replace('#', '');
+                        mixColor.r += parseInt(hex.substring(0,2), 16);
+                        mixColor.g += parseInt(hex.substring(2,4), 16);
+                        mixColor.b += parseInt(hex.substring(4,6), 16);
+                    }
+                });
+
+                keywords = [...new Set(keywords)].sort(() => 0.5 - Math.random()).slice(0, 8);
+                const len = selectedMoods.length || 1;
+                const avgHex = "#" + [mixColor.r, mixColor.g, mixColor.b].map(c => Math.round(c/len).toString(16).padStart(2, '0')).join('');
+
+                document.getElementById('res-theme').textContent = mainThemeStr.slice(0, -3) || "名前のない感情";
+                const kwContainer = document.getElementById('keyword-container');
+                kwContainer.innerHTML = '';
+                keywords.forEach(kw => kwContainer.insertAdjacentHTML('beforeend', `<span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 shadow-sm">#${kw}</span>`));
+                document.getElementById('res-phrase').textContent = `「 ${getRandomElement(genrePhrases[genre] || genrePhrases['Pop'])} 」`;
+                
+                const colorBox = document.getElementById('res-color-box');
+                colorBox.style.backgroundColor = avgHex;
+                colorBox.style.boxShadow = `0 0 15px ${avgHex}80`;
+                document.getElementById('res-color-name').textContent = avgHex.toUpperCase();
+                document.getElementById('res-color-name').style.color = avgHex;
+            }
+
+            function renderScaleDetail(index) {
+                const scale = generatedScalesData[index];
+                
+                // 構成音
+                document.getElementById('res-scale-notes').textContent = scale.notes.join(' - ');
+                
+                // 使いやすいコード
+                const triadsHtml = scale.triads.map(c => `<span class="px-3 py-1 bg-white/10 rounded font-mono text-sm shadow-sm">${c}</span>`).join('');
+                document.getElementById('res-scale-triads').innerHTML = `<span class="text-xs text-gray-400 mr-2">Triad</span> ${triadsHtml}`;
+                
+                const seventhsHtml = scale.sevenths.map(c => `<span class="px-3 py-1 bg-neonCyan/10 border border-neonCyan/30 rounded font-mono text-sm text-neon-cyan shadow-sm">${c}</span>`).join('');
+                document.getElementById('res-scale-sevenths').innerHTML = `<span class="text-xs text-gray-400 mr-2">7th/Tension</span> ${seventhsHtml}`;
+
+                // 進行候補の選出 (スケールのtypeに合うものをフィルタリング)
+                const validProgressions = dbProgressions.filter(p => p.type === 'any' || p.type === scale.type || scale.type === 'special');
+                
+                // カテゴリごとに1つずつ取得
+                const categories = ['王道寄り', 'エモ寄り', '不穏寄り', '浮遊感寄り', '変則寄り'];
+                const selectedProgs = [];
+                categories.forEach(cat => {
+                    const progsInCat = validProgressions.filter(p => p.cat === cat);
+                    if(progsInCat.length > 0) {
+                        selectedProgs.push(getRandomElement(progsInCat));
+                    }
+                });
+                
+                // ランダムに3〜5個になるよう調整（足りなければ全体から補充、多ければ削る。今回はそのまま表示）
+                const finalProgs = selectedProgs.sort(() => 0.5 - Math.random()).slice(0, 4); // 4つ表示
+
+                const progContainer = document.getElementById('progression-container');
+                progContainer.innerHTML = '';
+                finalProgs.forEach((prog, i) => {
+                    const delay = i * 0.1;
+                    
+                    // カテゴリによるバッジ色
+                    let badgeColor = 'bg-gray-500/20 text-gray-300';
+                    if(prog.cat === '王道寄り') badgeColor = 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+                    if(prog.cat === 'エモ寄り') badgeColor = 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+                    if(prog.cat === '不穏寄り') badgeColor = 'bg-red-500/20 text-red-300 border-red-500/30';
+                    if(prog.cat === '浮遊感寄り') badgeColor = 'bg-green-500/20 text-green-300 border-green-500/30';
+                    if(prog.cat === '変則寄り') badgeColor = 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+
+                    const parsedChords = parseRomanProgression(prog.roman, scale.root);
+
+                    const html = `
+                        <div class="bg-black/60 border border-white/5 hover:border-white/20 transition-colors rounded-xl p-4 relative group" style="animation: fadeInUp 0.4s ease forwards; animation-delay: ${delay}s; opacity: 0;">
+                            <span class="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded border ${badgeColor}">${prog.cat}</span>
+                            <div class="text-sm text-gray-500 font-mono mb-1">${prog.roman}</div>
+                            <div class="text-lg font-bold font-mono text-white mb-2 tracking-wider">${parsedChords}</div>
+                            <p class="text-xs text-gray-400 leading-relaxed border-t border-white/5 pt-2">${prog.desc}</p>
+                        </div>
+                    `;
+                    progContainer.insertAdjacentHTML('beforeend', html);
+                });
+            }
+
+            function showResult() {
+                loadingOverlay.classList.add('hidden');
+                inputSection.classList.add('hidden');
+                inputSection.classList.remove('opacity-50', 'pointer-events-none');
+                
+                resultSection.classList.remove('hidden');
+                resultSection.querySelectorAll('.animate-fade-in-up').forEach(el => {
+                    el.style.animation = 'none'; void el.offsetWidth; el.style.animation = null; 
+                });
+            }
+
+            function resetApp() {
+                resultSection.classList.add('hidden');
+                inputSection.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // --- イベント ---
+            btnSubmitManual.addEventListener('click', executeGeneration);
+            btnSubmitConcept.addEventListener('click', executeGeneration);
+            btnSubmitRandom.addEventListener('click', executeGeneration);
+            
+            btnClear.addEventListener('click', () => {
+                form.reset(); bpmSlider.value = 120; bpmNumber.value = 120; hideError();
+            });
+
+            btnRecreate.addEventListener('click', resetApp);
+
+            initUI();
+        });
+    </script>
+</body>
+</html>
